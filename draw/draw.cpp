@@ -2,6 +2,10 @@
 #include <GLFW\glfw3.h>
 #include <iostream>
 #include "shader.h"
+#include "stb_image.h"
+
+// 看到第二个纹理的程度
+float see = 0.2f;
 
 // 窗口大小调整回调函数
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -10,10 +14,24 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 // 检测按键输入
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, shader* ptr_shader)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		see += 0.0001f;
+		if (see >= 1.0f) {
+			see = 1.0f;
+		}
+		ptr_shader->setFloat("see", see);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		see -= 0.0001f;
+		if (see <= 0.0f) {
+			see = 0.0f;
+		}
+		ptr_shader->setFloat("see", see);
 	}
 }
 
@@ -33,6 +51,8 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);									// 将窗口的上下文设置为该主线程的上下文
+	// 告诉 GLFW  每当窗口调整大小的时候需要调用 framebuffer_size_callback
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// 在调用任何 OpenGL 的函数之前都需要初始化 GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -44,34 +64,32 @@ int main()
 	// 初始化视口维度
 	glViewport(0, 0, 800, 600);
 
-	// 告诉 GLFW  每当窗口调整大小的时候需要调用 framebuffer_size_callback
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
 	// 设置 OpenGL 通过 线性模式 绘制图元
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// 设置回默认模式
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	// 绘制一个三角形
+	//// 绘制一个三角形
+	//float vertices[] = {
+	//	// 位置              // 颜色
+	//	 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
+	//	-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
+	//	 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
+	//};
+
+	// 绘制一个四边形
 	float vertices[] = {
-		// 位置              // 颜色
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
+		//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+			 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   2.0f, 2.0f,   // 右上
+			 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   2.0f, 0.0f,   // 右下
+			-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+			-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 2.0f    // 左上
 	};
 
-	//// 绘制一个四边形
-	//float vertices[] = {
-	//	0.5f, 0.5f, 0.0f,   // 右上角
-	//	0.5f, -0.5f, 0.0f,  // 右下角
-	//	-0.5f, -0.5f, 0.0f, // 左下角
-	//	-0.5f, 0.5f, 0.0f   // 左上角
-	//};
-
-	//unsigned int indices[] = { // 注意索引从0开始! 
-	//	0, 1, 3, // 第一个三角形
-	//	1, 2, 3  // 第二个三角形
-	//};
+	unsigned int indices[] = { // 注意索引从0开始! 
+		0, 1, 3, // 第一个三角形
+		1, 2, 3  // 第二个三角形
+	};
 
 	// 创建一个 VAO 对象
 	unsigned int VAO;
@@ -85,30 +103,81 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	//// 定义一个索引缓存对象
-	//unsigned int EBO;
-	//glGenBuffers(1, &EBO);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	// 定义一个索引缓存对象
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// 1.设置顶点位置属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	// 颜色属性
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
 	glEnableVertexAttribArray(1);
+	// 纹理属性
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	//// test 获取硬件提供的顶点属性上限 一般都是 16 个包含4分量的顶点属性可用
 	//int nrAttributes;
 	//glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	//std::cout << "Maximum nr of vertex attributes supported:" << nrAttributes << std::endl;
 
+	// 生成纹理
+	unsigned int texture1;
+	glGenTextures(1, &texture1);
+	//glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	// 为当前绑定的纹理设置环绕、过滤方式
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// 载入图片
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+	// 加载并生成纹理
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	unsigned int texture2;
+	glGenTextures(1, &texture2);
+	//glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	// 为当前绑定的纹理设置环绕、过滤方式
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// 载入图片
+	data = stbi_load("awesomeface.png", &width, &height, &nrChannels, 0);
+	// 加载并生成纹理
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture1" << std::endl;
+	}
+	stbi_image_free(data);
+
 	shader ourShader("shader.vs", "shader.fs");
+	ourShader.use();
+	ourShader.setInt("texture1", 0);
+	ourShader.setInt("texture2", 1);
 
 	// 渲染循环
 	while (!glfwWindowShouldClose(window)) {
 		// 检测外部输入
-		processInput(window);
+		processInput(window, &ourShader);
 
 		// 渲染指令
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -123,13 +192,20 @@ int main()
 		// 3.绘制物体
 		//glUseProgram(shaderProgram);
 		//glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-		ourShader.use();
+		
 		//ourShader.setFloat4("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
-		ourShader.setFloat("pos", 0.0f);
+		//ourShader.setFloat("pos", 0.0f);
+		ourShader.setFloat("see", see);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		ourShader.use();
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+		//glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		//glBindVertexArray(0);
 
 		// 检查并调用事件，交换缓冲
 		glfwPollEvents();
@@ -138,7 +214,7 @@ int main()
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	//glDeleteBuffers(1, &EBO);
+	glDeleteBuffers(1, &EBO);
 	//glDeleteProgram(shaderProgram);
 
 	glfwTerminate();
