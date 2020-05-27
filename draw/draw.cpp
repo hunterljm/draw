@@ -12,8 +12,17 @@
 #include "shader.h"
 #include "stb_image.h"
 
+// 屏幕大小
+int screenWidth = 800;
+int screenHeight = 600;
+
 // 看到第二个纹理的程度
 float see = 0.2f;
+
+// 摄像机移动
+float fViewX = 0.0f;
+float fViewY = 0.0f;
+float fViewZ = -0.3f;
 
 // 窗口大小调整回调函数
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -22,6 +31,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 // 检测按键输入
+float move = 0.0005f;
 void processInput(GLFWwindow* window, shader* ptr_shader)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -41,6 +51,24 @@ void processInput(GLFWwindow* window, shader* ptr_shader)
 		}
 		ptr_shader->setFloat("see", see);
 	}
+	else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		fViewX += move;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		fViewX -= move;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		fViewY -= move;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		fViewY += move;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+		fViewZ -= move;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+		fViewZ += move;
+	}
 }
 
 int main()
@@ -52,7 +80,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);	// OpenGL 使用的是核心模式 Core_profile
 
 	// 创建一个窗口对象
-	GLFWwindow* window = glfwCreateWindow(800, 600, "test", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "test", nullptr, nullptr);
 	if (window == nullptr) {
 		std::cout << "Failed to create GLFW window." << std::endl;
 		glfwTerminate();
@@ -94,18 +122,69 @@ int main()
 	//		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 2.0f    // 左上
 	//};
 
-	// 绘制一个四边形
+	// 绘制六个四边形
 	float vertices[] = {
 		//     ---- 位置 ----       - 纹理坐标 -
-			 0.5f,  0.5f, 0.0f,   2.0f, 2.0f,   // 右上
-			 0.5f, -0.5f, 0.0f,   2.0f, 0.0f,   // 右下
-			-0.5f, -0.5f, 0.0f,   0.0f, 0.0f,   // 左下
-			-0.5f,  0.5f, 0.0f,   0.0f, 2.0f    // 左上
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
 	unsigned int indices[] = { // 注意索引从0开始! 
 		0, 1, 3, // 第一个三角形
 		1, 2, 3  // 第二个三角形
+	};
+
+	// 定义 10 个立方体位置
+	glm::vec3 cubePositions[] = {
+	  glm::vec3(0.0f,  0.0f,  0.0f),
+	  glm::vec3(2.0f,  5.0f, -15.0f),
+	  glm::vec3(-1.5f, -2.2f, -2.5f),
+	  glm::vec3(-3.8f, -2.0f, -12.3f),
+	  glm::vec3(2.4f, -0.4f, -3.5f),
+	  glm::vec3(-1.7f,  3.0f, -7.5f),
+	  glm::vec3(1.3f, -2.0f, -2.5f),
+	  glm::vec3(1.5f,  2.0f, -2.5f),
+	  glm::vec3(1.5f,  0.2f, -1.5f),
+	  glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 
 	// 创建一个 VAO 对象
@@ -191,6 +270,9 @@ int main()
 	ourShader.setInt("texture1", 0);
 	ourShader.setInt("texture2", 1);
 
+	// 开启深度测试
+	glEnable(GL_DEPTH_TEST);
+
 	//// 箱子旋转缩放
 	//glm::mat4 trans;
 	//trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
@@ -204,6 +286,9 @@ int main()
 		// 渲染指令
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// 清除深度缓冲
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//// 根据事件改变颜色
 		//float timeValue = glfwGetTime();
@@ -223,24 +308,37 @@ int main()
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-		glm::mat4 trans;
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-		
-		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-
 		glBindVertexArray(VAO);
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		trans = glm::mat4();
-		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
-		float scaleAmount = sin(glfwGetTime());
-		trans = glm::scale(trans, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+		
+		glm::mat4 view;
+		view = glm::translate(view, glm::vec3(fViewX, fViewY, fViewZ));
+//		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "view");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(45.0f), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glUniformMatrix4fv(glGetUniformLocation(ourShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+		for (unsigned int i = 0; i < 10; i++) {
+			glm::mat4 model;
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			glUniformMatrix4fv(glGetUniformLocation(ourShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		//trans = glm::mat4();
+		//trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		//float scaleAmount = sin(glfwGetTime());
+		//trans = glm::scale(trans, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+
+		//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// 检查并调用事件，交换缓冲
 		glfwPollEvents();
