@@ -1,16 +1,13 @@
 #include <glad/glad.h> 
 #include <GLFW\glfw3.h>
 #include <iostream>
-
-//#include <glm/vec3.hpp> // glm::vec3
-//#include <glm/vec4.hpp> // glm::vec4
-//#include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
 #include "stb_image.h"
+#include "camera.h"
 
 // 屏幕大小
 int screenWidth = 800;
@@ -19,10 +16,8 @@ int screenHeight = 600;
 // 看到第二个纹理的程度
 float see = 0.2f;
 
-// 摄像机移动
-float fViewX = 0.0f;
-float fViewY = 0.0f;
-float fViewZ = -0.3f;
+// 摄像机
+CCamera* camera = nullptr;
 
 // 窗口大小调整回调函数
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -31,7 +26,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 // 检测按键输入
-float move = 0.0005f;
 void processInput(GLFWwindow* window, shader* ptr_shader)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -51,24 +45,19 @@ void processInput(GLFWwindow* window, shader* ptr_shader)
 		}
 		ptr_shader->setFloat("see", see);
 	}
-	else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		fViewX += move;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		fViewX -= move;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		fViewY -= move;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		fViewY += move;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
-		fViewZ -= move;
-	}
-	else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-		fViewZ += move;
-	}
+	camera->processInput();
+}
+
+// 检测鼠标输入
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	camera->mouse_callback(xpos, ypos);
+}
+
+// 滚轮回调函数
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	camera->scroll_callback(xoffset, yoffset);
 }
 
 int main()
@@ -87,8 +76,17 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);									// 将窗口的上下文设置为该主线程的上下文
+
 	// 告诉 GLFW  每当窗口调整大小的时候需要调用 framebuffer_size_callback
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	// 创建摄像机对象
+	camera = new CCamera(window);
+
+	// 捕捉光标并隐藏光标
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 
 	// 在调用任何 OpenGL 的函数之前都需要初始化 GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -273,13 +271,10 @@ int main()
 	// 开启深度测试
 	glEnable(GL_DEPTH_TEST);
 
-	//// 箱子旋转缩放
-	//glm::mat4 trans;
-	//trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-	//trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
-
 	// 渲染循环
 	while (!glfwWindowShouldClose(window)) {
+		camera->Update();
+
 		// 检测外部输入
 		processInput(window, &ourShader);
 
@@ -290,18 +285,7 @@ int main()
 		// 清除深度缓冲
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//// 根据事件改变颜色
-		//float timeValue = glfwGetTime();
-		//float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-		//int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-
-		// 2.激活着色器程序对象
-		// 3.绘制物体
-		//glUseProgram(shaderProgram);
-		//glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-		
-		//ourShader.setFloat4("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
-		//ourShader.setFloat("pos", 0.0f);
+		// 绘制物体
 		ourShader.setFloat("see", see);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
@@ -310,17 +294,18 @@ int main()
 
 		glBindVertexArray(VAO);
 
-		
+		// 观察矩阵
 		glm::mat4 view;
-		view = glm::translate(view, glm::vec3(fViewX, fViewY, fViewZ));
-//		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+		view = glm::lookAt(camera->GetCameraPos(), camera->GetCameraPos() + camera->GetCameraFront(), camera->GetCameraUp());
 		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "view");
 		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(view));
 
+		// 三维物体看起来有远近的区别
 		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(45.0f), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(camera->GetFov()), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
 		glUniformMatrix4fv(glGetUniformLocation(ourShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
+		// 模型如何运动
 		for (unsigned int i = 0; i < 10; i++) {
 			glm::mat4 model;
 			model = glm::translate(model, cubePositions[i]);
@@ -337,16 +322,6 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-		//trans = glm::mat4();
-		//trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
-		//float scaleAmount = sin(glfwGetTime());
-		//trans = glm::scale(trans, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
-
-		//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 		// 检查并调用事件，交换缓冲
 		glfwPollEvents();
 		glfwSwapBuffers(window);
@@ -355,7 +330,6 @@ int main()
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
-	//glDeleteProgram(shaderProgram);
 
 	glfwTerminate();
 	return 0;
