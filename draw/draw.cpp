@@ -96,7 +96,7 @@ int main()
 	}
 
 	// 初始化视口维度
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, screenWidth, screenHeight);
 
 	// 设置 OpenGL 通过 线性模式 绘制图元
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
