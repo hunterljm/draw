@@ -81,7 +81,7 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// 创建摄像机对象
-	camera = new CCamera(window);
+	camera = new CCamera(window, glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), screenWidth/2, screenHeight/2);
 
 	// 捕捉光标并隐藏光标
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -295,15 +295,12 @@ int main()
 		glBindVertexArray(VAO);
 
 		// 观察矩阵
-		glm::mat4 view;
-		view = glm::lookAt(camera->GetCameraPos(), camera->GetCameraPos() + camera->GetCameraFront(), camera->GetCameraUp());
 		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "view");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 
 		// 三维物体看起来有远近的区别
-		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(camera->GetFov()), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
-		glUniformMatrix4fv(glGetUniformLocation(ourShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(glGetUniformLocation(ourShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
+			camera->GetPerspectiveMatirx((float)screenWidth/(float)screenHeight, 0.1f, 100.0f)));
 
 		// 模型如何运动
 		for (unsigned int i = 0; i < 10; i++) {
