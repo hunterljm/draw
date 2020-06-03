@@ -53,4 +53,18 @@
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\container2.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="resources\container2_specular.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="resources\lighting_maps_specular_color.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="resources\matrix.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
