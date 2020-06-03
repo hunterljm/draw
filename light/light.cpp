@@ -164,8 +164,16 @@ int main()
 		processInput(window);
 		camera->Update();
 
+		// 光的颜色随时间变化
+		lightColor.x = sin(glfwGetTime() * 0.2f);
+		lightColor.y = sin(glfwGetTime() * 0.07f);
+		lightColor.z = sin(glfwGetTime() * 0.13f);
+
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);		// 降低影响
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);	// 更低的影响  
+
 		// 光源的位置
-		glm::vec3 lightPos = glm::vec3(sin(float(glfwGetTime()))*2.f, 1.0f, sin(float(glfwGetTime()))*2.f);
+		glm::vec3 lightPos = glm::vec3(sin(float(glfwGetTime()))*3.f, 1.0f, sin(float(glfwGetTime()))*3.f);
 
 		// 重刷深度缓冲、背景色
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -190,10 +198,17 @@ int main()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 		sampShader.use();
-		sampShader.setVec3("objectColor", objectColor);
-		sampShader.setVec3("lightColor", lightColor);
+//		sampShader.setVec3("objectColor", objectColor);
+		//sampShader.setVec3("lightColor", lightColor);
 		sampShader.setVec3("lightPos", lightPos);
 		sampShader.setVec3("viewPos", camera->Position());
+		sampShader.setVec3("material.ambient", glm::vec3(1.0f));
+		sampShader.setVec3("material.diffuse", glm::vec3(1.0f));
+		sampShader.setVec3("material.specular", glm::vec3(1.0f));
+		sampShader.setFloat("material.shininess", 0.25f);
+		sampShader.setVec3("light.ambient", ambientColor);
+		sampShader.setVec3("light.diffuse", diffuseColor);
+		sampShader.setVec3("light.specular", glm::vec3(0.1f, 0.1f, 0.1f));
 		glBindVertexArray(VAO);
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
