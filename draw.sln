@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "draw", "draw\draw.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "draw_map", "draw_map\draw_map.vcxproj", "{E264FDB3-24F5-4260-9230-D9D6D141A6BE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "light", "light\light.vcxproj", "{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{E264FDB3-24F5-4260-9230-D9D6D141A6BE}.Release|x64.Build.0 = Release|x64
 		{E264FDB3-24F5-4260-9230-D9D6D141A6BE}.Release|x86.ActiveCfg = Release|Win32
 		{E264FDB3-24F5-4260-9230-D9D6D141A6BE}.Release|x86.Build.0 = Release|Win32
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Debug|x64.ActiveCfg = Debug|x64
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Debug|x64.Build.0 = Debug|x64
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Debug|x86.ActiveCfg = Debug|Win32
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Debug|x86.Build.0 = Debug|Win32
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Release|x64.ActiveCfg = Release|x64
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Release|x64.Build.0 = Release|x64
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Release|x86.ActiveCfg = Release|Win32
+		{B0D79BD7-AB09-42FC-87D8-B5BCBFD0D7B1}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
