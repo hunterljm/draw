@@ -177,6 +177,14 @@ int main()
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 
+	// 四个点光源的位置
+	glm::vec3 pointLightPositions[] = {
+		glm::vec3(0.7f,  0.2f,  2.0f),
+		glm::vec3(2.3f, -3.3f, -4.0f),
+		glm::vec3(-4.0f,  2.0f, -12.0f),
+		glm::vec3(0.0f,  0.0f, -3.0f)
+	};
+
 	// 创建一个被投光物体的 VAO、VBO
 	unsigned int VAO, VBO;
 	glGenVertexArrays(1, &VAO);
@@ -223,7 +231,7 @@ int main()
 	glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	// 箱子原本的颜色
-	glm::vec3 objectColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	// glm::vec3 objectColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	while (!glfwWindowShouldClose(window)) {
 		processInput(window);
@@ -256,33 +264,69 @@ int main()
 		glUniformMatrix4fv(glGetUniformLocation(lightingShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
 			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
 		));
-		// 模型转换矩阵
-		glm::mat4 model;
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
-		glUniformMatrix4fv(glGetUniformLocation(lightingShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		int size = sizeof(pointLightPositions) / sizeof(glm::vec3);
+		for (int i = 0; i < size; i++) {
+			// 模型转换矩阵
+			glm::mat4 model;
+			model = glm::translate(model, pointLightPositions[i]);
+			model = glm::scale(model, glm::vec3(0.2f));
+			glUniformMatrix4fv(glGetUniformLocation(lightingShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		
 		sampShader.use();
-//		sampShader.setVec3("objectColor", objectColor);
-		//sampShader.setVec3("lightColor", lightColor);
+
+		// 平行光
+		sampShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+		sampShader.setVec3("dirLight.ambient", ambientColor);
+		sampShader.setVec3("dirLight.diffuse", diffuseColor);
+		sampShader.setVec3("dirLight.specular", glm::vec3(0.1f));
+
+		// 点光源
+		//int size = sizeof(pointLightPositions) / sizeof(glm::vec3);
+		for (int i = 0; i < size; i++) {
+			std::stringstream strName;
+			strName << "pointLights[" << i << "].";
+			sampShader.setVec3(strName.str()+"position", pointLightPositions[i]);
+			sampShader.setFloat(strName.str() + "constant", 1.0f);
+			sampShader.setFloat(strName.str() + "linear", 0.045f);
+			sampShader.setFloat(strName.str() + "quadratic", 0.0075f);
+			sampShader.setVec3(strName.str() + "ambient", ambientColor);
+			sampShader.setVec3(strName.str() + "diffuse", diffuseColor);
+			sampShader.setVec3(strName.str() + "specular", glm::vec3(0.1f));
+		}
+
+		// 聚光
+		sampShader.setVec3("sportLight.position", camera->Position());
+		sampShader.setVec3("sportLight.direction", camera->Front());
+		sampShader.setVec3("sportLight.ambient", ambientColor);
+		sampShader.setVec3("sportLight.diffuse", diffuseColor);
+		sampShader.setVec3("sportLight.specular", glm::vec3(0.1f));
+		sampShader.setFloat("sportLight.constant", 1.0f);
+		sampShader.setFloat("sportLight.linear", 0.045f);
+		sampShader.setFloat("sportLight.quadratic", 0.0075f);
+		sampShader.setFloat("sportLight.cutOff", glm::cos(glm::radians(12.5f)));
+		sampShader.setFloat("sportLight.outerCutOff", glm::cos(glm::radians(17.5f)));
+
+////		sampShader.setVec3("objectColor", objectColor);
+//		//sampShader.setVec3("lightColor", lightColor);
 		sampShader.setVec3("viewPos", camera->Position());
 		//sampShader.setVec3("material.ambient", glm::vec3(1.0f));
-		//sampShader.setVec3("material.diffuse", glm::vec3(1.0f));
+		sampShader.setVec3("material.diffuse", glm::vec3(1.0f));
 		sampShader.setVec3("material.specular", glm::vec3(0.5f));
 		sampShader.setFloat("material.shininess", 0.5f);
-		// sampShader.setVec3("light.position", lightPos);
-		// sampShader.setVec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-		sampShader.setVec3("light.position", camera->Position());
-		sampShader.setVec3("light.direction", camera->Front());
-		sampShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
-		sampShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
-		sampShader.setVec3("light.ambient", ambientColor);
-		sampShader.setVec3("light.diffuse", diffuseColor);
-		sampShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-		sampShader.setFloat("light.constant", 1.0f);
-		sampShader.setFloat("light.linear", 0.045f);
-		sampShader.setFloat("light.quadratic", 0.0075f);
+//		// sampShader.setVec3("light.position", lightPos);
+//		// sampShader.setVec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+//		sampShader.setVec3("light.position", camera->Position());
+//		sampShader.setVec3("light.direction", camera->Front());
+//		sampShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+//		sampShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+//		sampShader.setVec3("light.ambient", ambientColor);
+//		sampShader.setVec3("light.diffuse", diffuseColor);
+//		sampShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+//		sampShader.setFloat("light.constant", 1.0f);
+//		sampShader.setFloat("light.linear", 0.045f);
+//		sampShader.setFloat("light.quadratic", 0.0075f);
 		glBindVertexArray(VAO);
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(

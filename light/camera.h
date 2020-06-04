@@ -4,7 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <GLFW\glfw3.h>
 
-const float CAMERA_SPEED = 0.0001f;	// 摄像机移动速度
+const float CAMERA_SPEED = 0.0003f;	// 摄像机移动速度
 const float SENSITIVITY = 0.1f;		// 鼠标移动的角速度
 const float PITCH = 0.0f;			// 俯仰角
 const float YAW = -90.f;			// 偏航角
@@ -37,6 +37,9 @@ public:
 	void processInput()
 	{
 		float cameraSpeed = camera_speed * deltaTime;
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			cameraSpeed *= 2;
+		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 			cameraPos -= Right * cameraSpeed;
 		}
