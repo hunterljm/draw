@@ -108,6 +108,12 @@ public:
 		return cameraPos;
 	}
 
+	// 获取镜头的方向
+	glm::vec3 Front()
+	{
+		return cameraFront;
+	}
+
 private:
 	void UpdateCameraVectors() {
 		glm::vec3 front;

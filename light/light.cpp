@@ -163,6 +163,20 @@ int main()
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	};
 
+	// 十个箱子的坐标
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	// 创建一个被投光物体的 VAO、VBO
 	unsigned int VAO, VBO;
 	glGenVertexArrays(1, &VAO);
@@ -252,27 +266,40 @@ int main()
 		sampShader.use();
 //		sampShader.setVec3("objectColor", objectColor);
 		//sampShader.setVec3("lightColor", lightColor);
-		sampShader.setVec3("lightPos", lightPos);
 		sampShader.setVec3("viewPos", camera->Position());
 		//sampShader.setVec3("material.ambient", glm::vec3(1.0f));
 		//sampShader.setVec3("material.diffuse", glm::vec3(1.0f));
 		sampShader.setVec3("material.specular", glm::vec3(0.5f));
 		sampShader.setFloat("material.shininess", 0.5f);
+		// sampShader.setVec3("light.position", lightPos);
+		// sampShader.setVec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+		sampShader.setVec3("light.position", camera->Position());
+		sampShader.setVec3("light.direction", camera->Front());
+		sampShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+		sampShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
 		sampShader.setVec3("light.ambient", ambientColor);
 		sampShader.setVec3("light.diffuse", diffuseColor);
 		sampShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		sampShader.setFloat("light.constant", 1.0f);
+		sampShader.setFloat("light.linear", 0.045f);
+		sampShader.setFloat("light.quadratic", 0.0075f);
 		glBindVertexArray(VAO);
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
 			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
 		));
-		glm::mat4 samp_model;
-		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(samp_model));
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diffuseMap);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, specularMap);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (int i = 0; i < 10; i++) {
+			glm::mat4 samp_model;
+			samp_model = glm::translate(samp_model, cubePositions[i]);
+			float angle = 20.0f;
+			samp_model = glm::rotate(samp_model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(samp_model));
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		// 检查并调用事件，交换缓冲
 		glfwPollEvents();
