@@ -138,6 +138,10 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	// 开启模板测试
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 	// cube VAO
 	unsigned int cubeVAO, cubeVBO;
 	glGenVertexArrays(1, &cubeVAO);
@@ -168,6 +172,7 @@ int main()
 	unsigned int floorTexture = loadTexture("resources/metal.png");
 
 	shader sampShader("resources/advanced.vs", "resources/advanced.fs");
+	shader singleColorShader("resources/advanced.vs", "resources/shaderSingleColor.fs");
 
 	while (!glfwWindowShouldClose(window)) {
 		processInput(window);
@@ -175,7 +180,11 @@ int main()
 		
 		// 重刷深度缓冲、背景色
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
+		// 绘制地板的时候不更新缓冲
+		glStencilMask(0x00);
 
 		// 渲染模型
 		sampShader.use();
@@ -186,12 +195,23 @@ int main()
 			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
 		));
 
+		// 模型转换矩阵
+		// floor
+		glBindVertexArray(planeVAO);
+		glBindTexture(GL_TEXTURE_2D, floorTexture);
+		glm::mat4 model = glm::mat4(1.0f);
+		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		// 将模板缓冲清除为0， 对箱子中所有绘制的片段，将模板值更新为1
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);	// 所有的片段都应该更新模板缓冲
+		glStencilMask(0xFF);
+
 		// cubes
 		glBindVertexArray(cubeVAO);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, cubeTexture);
-		// 模型转换矩阵
-		glm::mat4 model = glm::mat4(1.0);
+		model = glm::mat4(1.0);
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -199,13 +219,33 @@ int main()
 		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		// floor
-		glBindVertexArray(planeVAO);
-		glBindTexture(GL_TEXTURE_2D, floorTexture);
+		
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+
+		singleColorShader.use();
+		// 观察矩阵
+		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+		// 三维物体看起来有远近的区别
+		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
+			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
+		));
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		model = glm::mat4(1.0f);
-		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		glStencilMask(0xFF);
+		glEnable(GL_DEPTH_TEST);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

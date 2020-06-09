@@ -38,7 +38,7 @@ public:
 	{
 		float cameraSpeed = camera_speed * deltaTime;
 		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-			cameraSpeed *= 2;
+			cameraSpeed *= 5;
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 			cameraPos -= Right * cameraSpeed;
