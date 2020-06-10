@@ -1,6 +1,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp> // gml::translate, glm::rotate, glm::scale, glm::perspective
 
+#include <vector>
+#include <map>
+
 #include "model.h"
 #include "shader.h"
 #include "camera.h"
@@ -98,6 +101,14 @@ float planeVertices[] = {
 
 int main()
 {
+	// 数据初始化
+	std::vector<glm::vec3> vegetation;
+	vegetation.push_back(glm::vec3(-1.0f, 0.0f, 0.02f));
+	vegetation.push_back(glm::vec3(2.0f, 0.0f, 1.01f));
+	vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
+	vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
+	vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
+
 	// GLFW 初始化
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -138,9 +149,13 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	// 开启模板测试
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	//// 开启模板测试
+	//glEnable(GL_STENCIL_TEST);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	// 启用混合
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// cube VAO
 	unsigned int cubeVAO, cubeVBO;
@@ -168,11 +183,25 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindVertexArray(0);
 
+	// grass VAO
+	unsigned int vegetationVAO, vegetationVBO;
+	glGenVertexArrays(1, &vegetationVAO);
+	glBindVertexArray(vegetationVAO);
+	glGenBuffers(1, &vegetationVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vegetationVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
+
 	unsigned int cubeTexture = loadTexture("resources/marble.jpg");
 	unsigned int floorTexture = loadTexture("resources/metal.png");
+	unsigned int grassTexture = loadTexture("resources/blending_transparent_window.png", true);
 
 	shader sampShader("resources/advanced.vs", "resources/advanced.fs");
-	shader singleColorShader("resources/advanced.vs", "resources/shaderSingleColor.fs");
+	//shader singleColorShader("resources/advanced.vs", "resources/shaderSingleColor.fs");
 
 	while (!glfwWindowShouldClose(window)) {
 		processInput(window);
@@ -182,9 +211,15 @@ int main()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+		// 排序摄像头和窗户的距离，由远及近的进行绘制
+		std::map<float, glm::vec3> sorted;
+		for (unsigned int i = 0; i < vegetation.size(); i++) {
+			float distanc = glm::length(camera->Position() - vegetation[i]);
+			sorted[distanc] = vegetation[i];
+		}
 
-		// 绘制地板的时候不更新缓冲
-		glStencilMask(0x00);
+		//// 绘制地板的时候不更新缓冲
+		//glStencilMask(0x00);
 
 		// 渲染模型
 		sampShader.use();
@@ -203,9 +238,9 @@ int main()
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		// 将模板缓冲清除为0， 对箱子中所有绘制的片段，将模板值更新为1
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);	// 所有的片段都应该更新模板缓冲
-		glStencilMask(0xFF);
+		//// 将模板缓冲清除为0， 对箱子中所有绘制的片段，将模板值更新为1
+		//glStencilFunc(GL_ALWAYS, 1, 0xFF);	// 所有的片段都应该更新模板缓冲
+		//glStencilMask(0xFF);
 
 		// cubes
 		glBindVertexArray(cubeVAO);
@@ -219,33 +254,43 @@ int main()
 		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// vegetation
+		glBindVertexArray(vegetationVAO);
+		glBindTexture(GL_TEXTURE_2D, grassTexture);
+		for (auto itor = sorted.rbegin(); itor != sorted.rend(); itor++) {
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, itor->second);
+			glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 		
 
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
+		//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		//glStencilMask(0x00);
+		//glDisable(GL_DEPTH_TEST);
 
-		singleColorShader.use();
-		// 观察矩阵
-		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
-		// 三维物体看起来有远近的区别
-		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
-			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
-		));
-		model = glm::mat4(1.0);
-		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-		model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
-		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
-		glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		//singleColorShader.use();
+		//// 观察矩阵
+		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+		//// 三维物体看起来有远近的区别
+		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
+		//	camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
+		//));
+		//model = glm::mat4(1.0);
+		//model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		//model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		//model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		//model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
-		glStencilMask(0xFF);
-		glEnable(GL_DEPTH_TEST);
+		//glStencilMask(0xFF);
+		//glEnable(GL_DEPTH_TEST);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

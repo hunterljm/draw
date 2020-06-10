@@ -62,4 +62,4 @@ private:
 };
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
-unsigned int loadTexture(char const *path);
+unsigned int loadTexture(char const *path, bool isAlpha=false);

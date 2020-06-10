@@ -18,7 +18,11 @@ uniform sampler2D texture1;
 
 void main()
 {
-	FragColor = texture(texture1, TexCoords);
+	vec4 textColor = texture(texture1, TexCoords);
+//	if (textColor.a < 0.1) {
+//		discard;
+//	}
+	FragColor = textColor;
 	//FragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 
 	//float depth = LinearizeDepth(gl_FragCoord.z) / far;
