@@ -142,6 +142,8 @@
   <ItemGroup>
     <None Include="resources\advanced.vs" />
     <None Include="resources\advanced.fs" />
+    <None Include="resources\framebuffer.fs" />
+    <None Include="resources\framebuffer.vs" />
     <None Include="resources\shaderSingleColor.fs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

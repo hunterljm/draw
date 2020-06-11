@@ -55,5 +55,11 @@
     <None Include="resources\shaderSingleColor.fs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="resources\framebuffer.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\framebuffer.vs">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

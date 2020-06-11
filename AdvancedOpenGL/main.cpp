@@ -100,6 +100,17 @@ float planeVertices[] = {
 	 5.0f, -0.5f, -5.0f,  2.0f, 2.0f
 };
 
+float quadVertices[] = {
+	// positions   // texCoords
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	 1.0f,  1.0f,  1.0f, 1.0f
+};
+
 int main()
 {
 	// 数据初始化
@@ -148,18 +159,18 @@ int main()
 
 	// 开启深度测试
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	//glDepthFunc(GL_LESS);
 
 	//// 开启模板测试
 	//glEnable(GL_STENCIL_TEST);
 	//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	// 启用混合
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// 启用面剔除
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_FRONT);
 	//glFrontFace(GL_CW);
 
@@ -189,24 +200,69 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindVertexArray(0);
 
-	// grass VAO
-	unsigned int vegetationVAO, vegetationVBO;
-	glGenVertexArrays(1, &vegetationVAO);
-	glBindVertexArray(vegetationVAO);
-	glGenBuffers(1, &vegetationVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, vegetationVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+	//// grass VAO
+	//unsigned int vegetationVAO, vegetationVBO;
+	//glGenVertexArrays(1, &vegetationVAO);
+	//glBindVertexArray(vegetationVAO);
+	//glGenBuffers(1, &vegetationVBO);
+	//glBindBuffer(GL_ARRAY_BUFFER, vegetationVBO);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+	//glEnableVertexAttribArray(0);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	//glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glBindVertexArray(0);
+
+	// screen quad VAO
+	unsigned int quadVAO, quadVBO;
+	glGenVertexArrays(1, &quadVAO);
+	glBindVertexArray(quadVAO);
+	glGenBuffers(1, &quadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 	glBindVertexArray(0);
 
-	unsigned int cubeTexture = loadTexture("resources/marble.jpg");
-	unsigned int floorTexture = loadTexture("resources/metal.png");
-	unsigned int grassTexture = loadTexture("resources/blending_transparent_window.png", true);
+	// 创建帧缓冲
+	unsigned int framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-	shader sampShader("resources/advanced.vs", "resources/advanced.fs");
+	unsigned int texColorBuffer;
+	glGenTextures(1, &texColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+	// 附加一个纹理到帧缓冲
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
+
+	// 创建一个渲染缓冲对象
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+		return -1;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	unsigned int cubeTexture = loadTexture("resources/container.jpg");
+	unsigned int floorTexture = loadTexture("resources/metal.png");
+	//unsigned int grassTexture = loadTexture("resources/blending_transparent_window.png", true);
+
+	shader sampShader("resources/framebuffer.vs", "resources/framebuffer.fs");
+	shader screenShader("resources/advanced.vs", "resources/advanced.fs");
 	//shader singleColorShader("resources/advanced.vs", "resources/shaderSingleColor.fs");
 
 	while (!glfwWindowShouldClose(window)) {
@@ -214,18 +270,20 @@ int main()
 		camera->Update();
 		
 		// 重刷深度缓冲、背景色
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// 排序摄像头和窗户的距离，由远及近的进行绘制
-		std::map<float, glm::vec3> sorted;
-		for (unsigned int i = 0; i < vegetation.size(); i++) {
-			float distanc = glm::length(camera->Position() - vegetation[i]);
-			sorted[distanc] = vegetation[i];
-		}
+		//// 排序摄像头和窗户的距离，由远及近的进行绘制
+		//std::map<float, glm::vec3> sorted;
+		//for (unsigned int i = 0; i < vegetation.size(); i++) {
+		//	float distanc = glm::length(camera->Position() - vegetation[i]);
+		//	sorted[distanc] = vegetation[i];
+		//}
 
-		//// 绘制地板的时候不更新缓冲
-		//glStencilMask(0x00);
+		////// 绘制地板的时候不更新缓冲
+		////glStencilMask(0x00);
 
 		// 渲染模型
 		sampShader.use();
@@ -244,9 +302,9 @@ int main()
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		//// 将模板缓冲清除为0， 对箱子中所有绘制的片段，将模板值更新为1
-		//glStencilFunc(GL_ALWAYS, 1, 0xFF);	// 所有的片段都应该更新模板缓冲
-		//glStencilMask(0xFF);
+		////// 将模板缓冲清除为0， 对箱子中所有绘制的片段，将模板值更新为1
+		////glStencilFunc(GL_ALWAYS, 1, 0xFF);	// 所有的片段都应该更新模板缓冲
+		////glStencilMask(0xFF);
 
 		// cubes
 		glBindVertexArray(cubeVAO);
@@ -261,41 +319,51 @@ int main()
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// vegetation
-		//glBindVertexArray(vegetationVAO);
-		//glBindTexture(GL_TEXTURE_2D, grassTexture);
-		//for (auto itor = sorted.rbegin(); itor != sorted.rend(); itor++) {
-		//	model = glm::mat4(1.0f);
-		//	model = glm::translate(model, itor->second);
-		//	glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		//	glDrawArrays(GL_TRIANGLES, 0, 6);
-		//}
+		//// vegetation
+		////glBindVertexArray(vegetationVAO);
+		////glBindTexture(GL_TEXTURE_2D, grassTexture);
+		////for (auto itor = sorted.rbegin(); itor != sorted.rend(); itor++) {
+		////	model = glm::mat4(1.0f);
+		////	model = glm::translate(model, itor->second);
+		////	glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		////	glDrawArrays(GL_TRIANGLES, 0, 6);
+		////}
+		//
+
+		////glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		////glStencilMask(0x00);
+		////glDisable(GL_DEPTH_TEST);
+
+		////singleColorShader.use();
+		////// 观察矩阵
+		////glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+		////// 三维物体看起来有远近的区别
+		////glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
+		////	camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
+		////));
+		////model = glm::mat4(1.0);
+		////model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		////model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		////glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		////glDrawArrays(GL_TRIANGLES, 0, 36);
+		////model = glm::mat4(1.0f);
+		////model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		////model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
+		////glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		////glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 		
-
-		//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		//glStencilMask(0x00);
-		//glDisable(GL_DEPTH_TEST);
-
-		//singleColorShader.use();
-		//// 观察矩阵
-		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
-		//// 三维物体看起来有远近的区别
-		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
-		//	camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
-		//));
-		//model = glm::mat4(1.0);
-		//model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-		//model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
-		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//model = glm::mat4(1.0f);
-		//model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		//model = glm::scale(model, glm::vec3(1.05f, 1.05f, 1.05f));
-		//glUniformMatrix4fv(glGetUniformLocation(singleColorShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		screenShader.use();
+		glBindVertexArray(quadVAO);
+		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
 
-		//glStencilMask(0xFF);
+		glStencilMask(0xFF);
 		//glEnable(GL_DEPTH_TEST);
 
 		glfwSwapBuffers(window);
@@ -304,8 +372,12 @@ int main()
 	
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteVertexArrays(1, &planeVAO);
+	glDeleteVertexArrays(1, &quadVAO);
 	glDeleteBuffers(1, &cubeVBO);
 	glDeleteBuffers(1, &planeVBO);
+	glDeleteBuffers(1, &quadVBO);
+	glDeleteFramebuffers(1, &framebuffer);
+
 	delete camera;
 	glfwTerminate();
 	return 0;
