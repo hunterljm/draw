@@ -142,6 +142,8 @@
   <ItemGroup>
     <None Include="resources\cube.fs" />
     <None Include="resources\cube.vs" />
+    <None Include="resources\model.fs" />
+    <None Include="resources\model.vs" />
     <None Include="resources\skybox.fs" />
     <None Include="resources\skybox.vs" />
   </ItemGroup>

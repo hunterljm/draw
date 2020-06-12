@@ -58,5 +58,11 @@
     <None Include="resources\cube.vs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="resources\model.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\model.vs">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
