@@ -140,6 +140,10 @@
     <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="resources\planet.fs" />
+    <None Include="resources\planet.vs" />
+    <None Include="resources\rock.fs" />
+    <None Include="resources\rock.vs" />
     <None Include="resources\shader.fs" />
     <None Include="resources\shader.vs" />
   </ItemGroup>

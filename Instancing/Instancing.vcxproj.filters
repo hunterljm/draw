@@ -52,5 +52,17 @@
     <None Include="resources\shader.vs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="resources\planet.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\planet.vs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\rock.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\rock.vs">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

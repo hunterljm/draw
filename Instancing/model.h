@@ -33,13 +33,13 @@ public:
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	std::vector<Texture> textures;
+	unsigned int VAO, VBO, EBO;
 
 	// º¯Êý
 	Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
 	void Draw(shader& shader);
 
 private:
-	unsigned int VAO, VBO, EBO;
 	void setupMesh();
 };
 
@@ -50,11 +50,11 @@ public:
 		loadModel(path);
 	}
 	void Draw(shader& shader);
-private:
+
 	std::vector<Mesh> meshes;
 	std::string directory;
 	std::vector<Texture> textures_loaded;
-
+private:
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
