@@ -116,6 +116,20 @@ int main()
 		}
 	}
 
+	// 为实例化数组准备一个新的缓冲
+	unsigned int instancedVBO;
+	glGenBuffers(1, &instancedVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// 绑定新的顶点属性指针
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVBO);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexAttribDivisor(2, 1);
+
 	//shader sampShader("resources/model.vs", "resources/model.gs", "resources/model.fs");
 	//shader normalShader("resources/model1.vs", "resources/model1.gs", "resources/model1.fs");
 	//Model tModel("resources/nanosuit/nanosuit.obj");
