@@ -143,6 +143,9 @@
     <None Include="resources\model.fs" />
     <None Include="resources\model.gs" />
     <None Include="resources\model.vs" />
+    <None Include="resources\model1.fs" />
+    <None Include="resources\model1.gs" />
+    <None Include="resources\model1.vs" />
     <None Include="resources\shader.fs" />
     <None Include="resources\shader.gs" />
     <None Include="resources\shader.vs" />

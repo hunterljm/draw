@@ -102,6 +102,7 @@ int main()
 	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	shader sampShader("resources/model.vs", "resources/model.gs", "resources/model.fs");
+	shader normalShader("resources/model1.vs", "resources/model1.gs", "resources/model1.fs");
 	Model tModel("resources/nanosuit/nanosuit.obj");
 	//shader shader("resources/shader.vs", "resources/shader.gs", "resources/shader.fs");
 
@@ -143,6 +144,19 @@ int main()
 		//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(glGetUniformLocation(sampShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 		tModel.Draw(sampShader);
+		normalShader.use();
+		glUniformMatrix4fv(glGetUniformLocation(normalShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(camera->GetViewMatrix()));
+		// 投影矩阵
+		glUniformMatrix4fv(glGetUniformLocation(normalShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(
+			camera->GetPerspectiveMatirx((float)screenWidth / (float)screenHeight, 0.1f, 100.0f)
+		));
+		// 模型转换矩阵
+		model = glm::mat4(1.0);
+		//model = glm::translate(model, glm::vec3(0.0f));
+		//model = glm::scale(model, glm::vec3(1.0f));
+		//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(glGetUniformLocation(normalShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+		tModel.Draw(normalShader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

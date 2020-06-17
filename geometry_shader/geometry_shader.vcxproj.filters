@@ -64,5 +64,14 @@
     <None Include="resources\model.vs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="resources\model1.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\model1.gs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\model1.vs">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
