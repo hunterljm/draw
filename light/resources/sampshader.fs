@@ -124,8 +124,12 @@ vec3 CalcSportLight(SportLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 	float diff = max(dot(normal, lightDir), 0.0);
 
 	// 镜面光反色
-	vec3 reflectDir = reflect(-lightDir, normal);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	// 冯氏光照
+	// vec3 reflectDir = reflect(-lightDir, normal);
+	// float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	// Blinn-Phong 光照
+	vec3 halfwayDir = normalize(lightDir + viewDir);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
 
 	// 衰减
 	float distance = length(light.position - fragPos);
