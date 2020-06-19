@@ -87,6 +87,7 @@ int main()
 	// 开启深度测试
 	glEnable(GL_DEPTH_TEST);
 
+	shader shaderT("resources/shadow_mapping.vs", "resources/shadow_mapping.fs");
 	shader simpleDepthShader("resources/shadow_mapping_depth.vs", "resources/shadow_mapping_depth.fs");
 	shader debugDepthQuad("resources/debug_quad.vs", "resources/debug_quad.fs");
 
@@ -129,8 +130,10 @@ int main()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	// 2、把生成的深度纹理作为帧缓冲的深度缓冲
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -139,6 +142,9 @@ int main()
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	shaderT.use();
+	shaderT.setInt("diffuseTexture", 0);
+	shaderT.setInt("shadowMap", 1);
 	debugDepthQuad.use();
 	debugDepthQuad.setInt("depthMap", 0);
 
@@ -151,7 +157,9 @@ int main()
 		// 重刷深度缓冲、背景色
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// 1、首先渲染深度贴图
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 		float near_plane = 1.0f, far_plane = 7.5f;
@@ -162,7 +170,6 @@ int main()
 		simpleDepthShader.use();
 		simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
-		// 1、首先渲染深度贴图
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -171,16 +178,33 @@ int main()
 		renderScene(simpleDepthShader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		// 2、像往常一样渲染场景，但这次试用深度贴图
 		glViewport(0, 0, screenWidth, screenHeight);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// 1.5
+		glViewport(0, 0, screenWidth, screenHeight);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		shaderT.use();
+		glm::mat4 projection = glm::perspective(glm::radians(camera->GetFov()), (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view = camera->GetViewMatrix();
+		shaderT.setMat4("projection", projection);
+		shaderT.setMat4("view", view);
+		shaderT.setVec3("viewPos", camera->Position());
+		shaderT.setVec3("lightPos", lightPos);
+		shaderT.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, woodTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		renderScene(shaderT);
+
+		// 2、像往常一样渲染场景，但这次试用深度贴图
 		debugDepthQuad.use();
 		debugDepthQuad.setFloat("near_plane", near_plane);
 		debugDepthQuad.setFloat("far_plane", far_plane);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		renderQuad();
+		//renderQuad();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

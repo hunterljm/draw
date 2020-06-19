@@ -117,6 +117,11 @@ public:
 		return cameraFront;
 	}
 
+	float GetFov()
+	{
+		return fov;
+	}
+
 private:
 	void UpdateCameraVectors() {
 		glm::vec3 front;

@@ -58,5 +58,11 @@
     <None Include="resources\shadow_mapping_depth.vs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="resources\shadow_mapping.fs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="resources\shadow_mapping.vs">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
